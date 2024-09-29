@@ -31,6 +31,12 @@ We built this server to fulfill the following requirements:
 
 # Pre-requisites
 
+ImageMagick: (For image displays):
+
+```bash
+apt-get install imagemagick
+```
+
 ZeroMQ: 
 
 ```bash

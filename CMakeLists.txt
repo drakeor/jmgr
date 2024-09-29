@@ -7,19 +7,11 @@ project(jmgr
   VERSION 1.0.0
 )
 
-# Use ZeroMQ
-# Find the ZeroMQ package
-find_package(ZeroMQ REQUIRED)
+# Set the output directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Fetch gRPC
-#set(ABSL_ENABLE_INSTALL ON)
-#FetchContent_Declare(
-#  gRPC
-#  GIT_REPOSITORY https://github.com/grpc/grpc
-#  GIT_TAG        v1.66.2  # e.g v1.28.0
-#)
-#set(FETCHCONTENT_QUIET OFF)
-#FetchContent_MakeAvailable(gRPC)
+# Use ZeroMQ, find it's package
+find_package(ZeroMQ REQUIRED)
 
 #  Fetch FTXUI 
 set(FETCHCONTENT_UPDATES_DISCONNECTED TRUE)
@@ -34,16 +26,21 @@ if(NOT ftxui_POPULATED)
   add_subdirectory(${ftxui_SOURCE_DIR} ${ftxui_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
-# Set the output directory
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Build the server manager tool
 add_executable(jmgr
   src/main_app.cpp
 )
 
+# Build the server manager service
 add_executable(jmgr-service
   src/main_daemon.cpp
+)
+
+# Build the splash screen
+add_executable(jmgr-splash
+  src/main_splash.cpp
+  src/tiv/tiv_lib.cpp
 )
 
 target_include_directories(jmgr PRIVATE src)
@@ -57,6 +54,11 @@ target_link_libraries(jmgr
 )
 
 target_link_libraries(jmgr-service
+#  grpc++
+  zmq
+)
+
+target_link_libraries(jmgr-splash
 #  grpc++
   zmq
 )
