@@ -1,64 +1,59 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <sstream>
-#include <map>
+#include <cmath>
 
-using namespace std;
+class Uptime {
+public:
+    // Method to get the system uptime as a formatted string
+    std::string getFormattedUptime() {
+        std::ifstream uptimeFile("/proc/uptime");
 
-struct NetworkData {
-    unsigned long long rx_bytes; // Received bytes
-    unsigned long long tx_bytes; // Transmitted bytes
+        if (!uptimeFile.is_open()) {
+            throw std::runtime_error("Error: could not open /proc/uptime.");
+        }
+
+        double uptimeSeconds;
+        uptimeFile >> uptimeSeconds; // Read the uptime in seconds
+
+        int days = uptimeSeconds / 86400;
+        uptimeSeconds = std::fmod(uptimeSeconds, 86400);
+        int hours = uptimeSeconds / 3600;
+        uptimeSeconds = std::fmod(uptimeSeconds, 3600);
+        int minutes = uptimeSeconds / 60;
+        int seconds = static_cast<int>(uptimeSeconds) % 60;
+
+        uptimeFile.close();
+
+        // Format the uptime as a string
+        std::string formattedUptime = "System Uptime: ";
+        if (days > 0) {
+            formattedUptime += std::to_string(days) + " days, ";
+        }
+        formattedUptime += std::to_string(hours) + " hours, " +
+                           std::to_string(minutes) + " minutes, " +
+                           std::to_string(seconds) + " seconds";
+
+        return formattedUptime;
+    }
+
+    // Method to print the system uptime
+    void printUptime() {
+        try {
+            std::string uptime = getFormattedUptime();
+            std::cout << uptime << std::endl;
+        } catch (const std::runtime_error& e) {
+            std::cerr << e.what() << std::endl;
+        }
+    }
 };
 
-map<string, NetworkData> get_all_network_data() {
-    map<string, NetworkData> network_data;
-    std::ifstream file("/proc/net/dev");
-    std::string line;
-
-    if (file.is_open()) {
-        // Skip the first two lines (header)
-        std::getline(file, line);
-        std::getline(file, line);
-
-        // Parse each line for the network interface statistics
-        while (std::getline(file, line)) {
-            std::istringstream ss(line);
-            std::string iface;
-            unsigned long long rx_bytes, rx_packets, rx_errs, rx_drop, rx_fifo, rx_frame, rx_compressed, rx_multicast;
-            unsigned long long tx_bytes, tx_packets, tx_errs, tx_drop, tx_fifo, tx_colls, tx_carrier, tx_compressed;
-
-            // Extract interface name
-            ss >> iface;
-
-            // Remove the trailing colon from the interface name
-            iface = iface.substr(0, iface.find(':'));
-
-            // Extract the rest of the data
-            ss >> rx_bytes >> rx_packets >> rx_errs >> rx_drop >> rx_fifo >> rx_frame >> rx_compressed >> rx_multicast
-               >> tx_bytes >> tx_packets >> tx_errs >> tx_drop >> tx_fifo >> tx_colls >> tx_carrier >> tx_compressed;
-
-            // Store data in the map with interface name as key
-            NetworkData data = {rx_bytes, tx_bytes};
-            network_data[iface] = data;
-        }
-        file.close();
-    }
-
-    return network_data;
-}
-
 int main() {
-    map<string, NetworkData> network_stats = get_all_network_data();
+    // Create an Uptime object
+    Uptime uptime;
 
-    cout << "Network traffic statistics:" << endl;
-    for (const auto& entry : network_stats) {
-        const string& iface = entry.first;
-        const NetworkData& data = entry.second;
-        cout << "Interface: " << iface << endl;
-        cout << "  Received: " << data.rx_bytes / (1024 * 1024) << " MB" << endl;
-        cout << "  Transmitted: " << data.tx_bytes / (1024 * 1024) << " MB" << endl;
-    }
+    // Print the system uptime
+    uptime.printUptime();
 
     return 0;
 }

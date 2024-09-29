@@ -5,70 +5,82 @@
 #include <vector>
 #include <sstream>
 
-using namespace std;
+class DiskMonitor {
+public:
+    // Struct to store disk usage information
+    struct DiskUsage {
+        std::string mount_point;
+        unsigned long long total_space;
+        unsigned long long used_space;
+        unsigned long long free_space;
+    };
 
-struct DiskUsage {
-    string mount_point;
-    unsigned long long total_space;
-    unsigned long long used_space;
-    unsigned long long free_space;
+    // Method to start disk usage monitoring
+    void monitorDiskUsage() {
+        std::vector<std::string> filesystems = getMountedFilesystems();
+        for (const auto& fs : filesystems) {
+            DiskUsage usage = getDiskUsage(fs);
+            printDiskUsage(usage);
+        }
+    }
+
+private:
+    // Method to retrieve a list of mounted filesystems
+    std::vector<std::string> getMountedFilesystems() const {
+        std::vector<std::string> filesystems;
+        std::ifstream file("/proc/mounts");
+        std::string line;
+
+        if (file.is_open()) {
+            while (getline(file, line)) {
+                std::istringstream iss(line);
+                std::string device, mount_point, filesystem_type;
+                iss >> device >> mount_point >> filesystem_type;
+
+                // Ignore pseudo filesystems like tmpfs, proc, sysfs, etc.
+                if (filesystem_type != "tmpfs" && filesystem_type != "proc" &&
+                    filesystem_type != "sysfs" && filesystem_type != "devtmpfs" &&
+                    filesystem_type != "devpts" && filesystem_type != "overlay") {
+                    filesystems.push_back(mount_point);
+                }
+            }
+            file.close();
+        }
+
+        return filesystems;
+    }
+
+    // Method to get disk usage stats for a given mount point
+    DiskUsage getDiskUsage(const std::string& mount_point) const {
+        struct statvfs vfs;
+
+        if (statvfs(mount_point.c_str(), &vfs) != 0) {
+            std::cerr << "Error: unable to get stats for mount point: " << mount_point << std::endl;
+            return DiskUsage{mount_point, 0, 0, 0};
+        }
+
+        unsigned long long total = vfs.f_blocks * vfs.f_frsize;
+        unsigned long long free = vfs.f_bfree * vfs.f_frsize;
+        unsigned long long used = total - free;
+
+        return DiskUsage{mount_point, total, used, free};
+    }
+
+    // Method to print disk usage
+    void printDiskUsage(const DiskUsage& usage) const {
+        std::cout << "Mount Point: " << usage.mount_point << std::endl;
+        std::cout << "Total Space: " << usage.total_space / (1024 * 1024) << " MB" << std::endl;
+        std::cout << "Used Space: " << usage.used_space / (1024 * 1024) << " MB" << std::endl;
+        std::cout << "Free Space: " << usage.free_space / (1024 * 1024) << " MB" << std::endl;
+        std::cout << "-----------------------------" << std::endl;
+    }
 };
 
-vector<string> get_mounted_filesystems() {
-    vector<string> filesystems;
-    ifstream file("/proc/mounts");
-    string line;
-
-    if (file.is_open()) {
-        while (getline(file, line)) {
-            istringstream iss(line);
-            string device, mount_point, filesystem_type;
-            iss >> device >> mount_point >> filesystem_type;
-
-            // Ignore certain pseudo filesystems like tmpfs, proc, sysfs, etc.
-            if (filesystem_type != "tmpfs" && filesystem_type != "proc" && 
-                filesystem_type != "sysfs" && filesystem_type != "devtmpfs" &&
-                filesystem_type != "devpts" && filesystem_type != "overlay") {
-                filesystems.push_back(mount_point);
-            }
-        }
-        file.close();
-    }
-
-    return filesystems;
-}
-
-DiskUsage get_disk_usage(const string& path) {
-    struct statvfs stat;
-    DiskUsage usage = {path, 0, 0, 0};
-
-    if (statvfs(path.c_str(), &stat) == 0) {
-        unsigned long long total_space = stat.f_blocks * stat.f_frsize;
-        unsigned long long free_space = stat.f_bfree * stat.f_frsize;
-        unsigned long long available_space = stat.f_bavail * stat.f_frsize;
-        unsigned long long used_space = total_space - free_space;
-
-        usage.total_space = total_space;
-        usage.free_space = free_space;
-        usage.used_space = used_space;
-    }
-
-    return usage;
-}
-
 int main() {
-    vector<string> filesystems = get_mounted_filesystems();
+    DiskMonitor monitor;
 
-    cout << "Disk Usage across all mounted filesystems:" << endl;
-    for (const auto& fs : filesystems) {
-        DiskUsage usage = get_disk_usage(fs);
-        if (usage.total_space > 0) {
-            cout << "Mount Point: " << usage.mount_point << endl;
-            cout << "  Total Space: " << usage.total_space / (1024 * 1024 * 1024) << " GB" << endl;
-            cout << "  Used Space: " << usage.used_space / (1024 * 1024 * 1024) << " GB" << endl;
-            cout << "  Free Space: " << usage.free_space / (1024 * 1024 * 1024) << " GB" << endl;
-        }
-    }
+    // Start monitoring disk usage
+    monitor.monitorDiskUsage();
 
     return 0;
 }
