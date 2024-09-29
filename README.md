@@ -28,6 +28,15 @@ We built this server to fulfill the following requirements:
 
 * Services keep historical data for some set amount of time
 
+# Credits
+
+https://github.com/stefanhaustein/TerminalImageViewer
+
+For terminal image viewer, which helps display images in the console
+
+https://github.com/ljrrjl/ftxui-image-view
+
+For simple terminal image viewer integration to FTXUI
 
 # Pre-requisites
 

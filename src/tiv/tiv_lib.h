@@ -37,63 +37,95 @@
 
 #include <array>
 #include <functional>
+#include <iostream>
 
-// Implementation of flag representation for flags in the main() method
-constexpr int FLAG_FG = 1;
-constexpr int FLAG_BG = 2;
-constexpr int FLAG_MODE_256 = 4;   // Limit colors to 256-color mode
-constexpr int FLAG_24BIT = 8;      // 24-bit color mode
-constexpr int FLAG_NOOPT = 16;     // Only use the same half-block character
-constexpr int FLAG_TELETEXT = 32;  // Use teletext characters
+#define cimg_display 0
+#include "CImg.h"
+
+namespace tiv
+{
+
+    struct size {
+        size(unsigned int in_width, unsigned int in_height)
+            : width(in_width), height(in_height) {}
+        explicit size(cimg_library::CImg<unsigned int> img)
+            : width(img.width()), height(img.height()) {}
+        unsigned int width;
+        unsigned int height;
+        size scaled(double scale) { return size(width * scale, height * scale); }
+        size fitted_within(size container) {
+            double scale = std::min(container.width / static_cast<double>(width),
+                                    container.height / static_cast<double>(height));
+            return scaled(scale);
+        }
+    };
+
+    // Implementation of flag representation for flags in the main() method
+    constexpr int FLAG_FG = 1;
+    constexpr int FLAG_BG = 2;
+    constexpr int FLAG_MODE_256 = 4;   // Limit colors to 256-color mode
+    constexpr int FLAG_24BIT = 8;      // 24-bit color mode
+    constexpr int FLAG_NOOPT = 16;     // Only use the same half-block character
+    constexpr int FLAG_TELETEXT = 32;  // Use teletext characters
 
 
-// Color saturation value steps from 0 to 255
-constexpr int COLOR_STEP_COUNT = 6;
-constexpr int COLOR_STEPS[COLOR_STEP_COUNT] = {0, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
+    // Color saturation value steps from 0 to 255
+    constexpr int COLOR_STEP_COUNT = 6;
+    constexpr int COLOR_STEPS[COLOR_STEP_COUNT] = {0, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
 
-// Grayscale saturation value steps from 0 to 255
-constexpr int GRAYSCALE_STEP_COUNT = 24;
-constexpr int GRAYSCALE_STEPS[GRAYSCALE_STEP_COUNT] = {
-    0x08, 0x12, 0x1c, 0x26, 0x30, 0x3a, 0x44, 0x4e, 0x58, 0x62, 0x6c, 0x76,
-    0x80, 0x8a, 0x94, 0x9e, 0xa8, 0xb2, 0xbc, 0xc6, 0xd0, 0xda, 0xe4, 0xee};
+    // Grayscale saturation value steps from 0 to 255
+    constexpr int GRAYSCALE_STEP_COUNT = 24;
+    constexpr int GRAYSCALE_STEPS[GRAYSCALE_STEP_COUNT] = {
+        0x08, 0x12, 0x1c, 0x26, 0x30, 0x3a, 0x44, 0x4e, 0x58, 0x62, 0x6c, 0x76,
+        0x80, 0x8a, 0x94, 0x9e, 0xa8, 0xb2, 0xbc, 0xc6, 0xd0, 0xda, 0xe4, 0xee};
 
 
-typedef std::function<unsigned long(int, int)> GetPixelFunction;
+    typedef std::function<unsigned long(int, int)> GetPixelFunction;
 
-int clamp_byte(int value);
+    int clamp_byte(int value);
 
-int best_index(int value, const int STEPS[], int count);
+    int best_index(int value, const int STEPS[], int count);
 
-double sqr(double n);
+    double sqr(double n);
 
-/**
- * @brief Struct to represent a character to be drawn.
- * @param fgColor RGB
- * @param bgColor RGB
- * @param codePoint The code point of the character to be drawn.
- */
-struct CharData {
-    std::array<int, 3> fgColor = std::array<int, 3>{0, 0, 0};
-    std::array<int, 3> bgColor = std::array<int, 3>{0, 0, 0};
-    int codePoint;
-};
+    /**
+    * @brief Struct to represent a character to be drawn.
+    * @param fgColor RGB
+    * @param bgColor RGB
+    * @param codePoint The code point of the character to be drawn.
+    */
+    struct CharData {
+        std::array<int, 3> fgColor = std::array<int, 3>{0, 0, 0};
+        std::array<int, 3> bgColor = std::array<int, 3>{0, 0, 0};
+        int codePoint;
+    };
 
-// Return a CharData struct with the given code point and corresponding averag
-// fg and bg colors.
-CharData createCharData(GetPixelFunction get_pixel, int x0, int y0,
-                        int codepoint, int pattern);
+    // Return a CharData struct with the given code point and corresponding averag
+    // fg and bg colors.
+    CharData createCharData(GetPixelFunction get_pixel, int x0, int y0,
+                            int codepoint, int pattern);
 
-/**
- * @brief Find the best character and colors
- * for a 4x8 part of the image at the given position
- *
- * @param image
- * @param x0
- * @param y0
- * @param flags
- * @return CharData
- */
-CharData findCharData(GetPixelFunction get_pixel, int x0, int y0,
-                      const int &flags);
+    /**
+    * @brief Find the best character and colors
+    * for a 4x8 part of the image at the given position
+    *
+    * @param image
+    * @param x0
+    * @param y0
+    * @param flags
+    * @return CharData
+    */
+    CharData findCharData(GetPixelFunction get_pixel, int x0, int y0,
+                        const int &flags);
+
+    cimg_library::CImg<unsigned char> load_rgb_CImg(const char *const &filename);
+
+    void printTermColor(std::ostream& os, const int &flags, int r, int g, int b);
+
+    void printCodepoint(std::ostream& os, int codepoint);
+
+    void printImage(const cimg_library::CImg<unsigned char> &image, const int &flags);
+    std::pair<int, int> get_windows_size();
+} // namespace tiv
 
 #endif 

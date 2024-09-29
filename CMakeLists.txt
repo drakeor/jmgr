@@ -40,10 +40,12 @@ add_executable(jmgr-service
 # Build the splash screen
 add_executable(jmgr-splash
   src/main_splash.cpp
+  src/tiv/image_view.cpp
   src/tiv/tiv_lib.cpp
 )
 
 target_include_directories(jmgr PRIVATE src)
+target_include_directories(jmgr-splash PRIVATE src)
  
 target_link_libraries(jmgr
   PRIVATE ftxui::screen
@@ -59,6 +61,9 @@ target_link_libraries(jmgr-service
 )
 
 target_link_libraries(jmgr-splash
+  PRIVATE ftxui::screen
+  PRIVATE ftxui::dom
+  PRIVATE ftxui::component
 #  grpc++
   zmq
 )
