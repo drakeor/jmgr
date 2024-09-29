@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
+include(FetchContent)
 
 # Project definition
 project(jmgr
@@ -6,16 +7,19 @@ project(jmgr
   VERSION 1.0.0
 )
 
+# Use ZeroMQ
+# Find the ZeroMQ package
+find_package(ZeroMQ REQUIRED)
+
 # Fetch gRPC
-include(FetchContent)
-set(ABSL_ENABLE_INSTALL ON)
-FetchContent_Declare(
-  gRPC
-  GIT_REPOSITORY https://github.com/grpc/grpc
-  GIT_TAG        v1.66.2  # e.g v1.28.0
-)
-set(FETCHCONTENT_QUIET OFF)
-FetchContent_MakeAvailable(gRPC)
+#set(ABSL_ENABLE_INSTALL ON)
+#FetchContent_Declare(
+#  gRPC
+#  GIT_REPOSITORY https://github.com/grpc/grpc
+#  GIT_TAG        v1.66.2  # e.g v1.28.0
+#)
+#set(FETCHCONTENT_QUIET OFF)
+#FetchContent_MakeAvailable(gRPC)
 
 #  Fetch FTXUI 
 set(FETCHCONTENT_UPDATES_DISCONNECTED TRUE)
@@ -35,11 +39,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Build the server manager tool
 add_executable(jmgr
-  src/main.cpp
+  src/main_app.cpp
 )
 
 add_executable(jmgr-service
-  src/main.cpp
+  src/main_daemon.cpp
 )
 
 target_include_directories(jmgr PRIVATE src)
@@ -48,9 +52,11 @@ target_link_libraries(jmgr
   PRIVATE ftxui::screen
   PRIVATE ftxui::dom
   PRIVATE ftxui::component
-  grpc++
+#  grpc++
+  zmq
 )
 
 target_link_libraries(jmgr-service
-  grpc++
+#  grpc++
+  zmq
 )
