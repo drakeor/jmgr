@@ -73,6 +73,12 @@ int main() {
   OSInfo osInfo;
   std::string osInfoString = osInfo.getOSInfo();
 
+  std::vector<Element> elements;
+  
+  // Dynamically add elements to the vector.
+  elements.push_back(text("Dynamic Column 1"));
+  elements.push_back(text("Dynamic Column 2"));
+  elements.push_back(text("Dynamic Column 3"));
 
   auto paragraph_right = vbox({
       window(text("Server Information"), vbox({
@@ -93,6 +99,25 @@ int main() {
           color(Color::Default, text(uptimeString)),
         }),
       })) | xflex,
+      window(text("Memory Information"), vbox({
+        hbox({
+          color(Color::RedLight, text("Usage: ")),
+          color(Color::Default, text("???")),
+        }),
+        hbox({
+          color(Color::RedLight, text("Kernel: ")),
+          color(Color::Default, text(kernelInfoString)),
+        }),
+        hbox({
+          color(Color::RedLight, text("CPU: ")),
+          color(Color::Default, text(cpuInfoString)),
+        }),
+        hbox({
+          color(Color::RedLight, text("Uptime: ")),
+          color(Color::Default, text(uptimeString)),
+        }),
+      })) | xflex,
+      window(text("Disk Information"), vbox(std::move(elements))) | xflex,
       //window(text("Server Information"), paragraphAlignLeft(str)),
   });
 
