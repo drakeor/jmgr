@@ -45,6 +45,7 @@ add_executable(jmgr-splash
 
   src/metrics/uptime.cpp
   src/metrics/kernel_info.cpp
+  src/metrics/cpu_info.cpp
 )
 
 target_include_directories(jmgr PRIVATE src)

@@ -31,6 +31,7 @@
 
 #include "metrics/uptime.h"
 #include "metrics/kernel_info.h"
+#include "metrics/cpu_info.h"
 
 using namespace ftxui;
 
@@ -59,11 +60,15 @@ int main() {
       "ever since the 1500s, when an unknown printer took a galley of type "
       "and scrambled it to make a type specimen book.";
 
+  CPUInfo cpuInfo;
+  std::string cpuInfoString = cpuInfo.getModelAndCores();
+
   Uptime uptime;
   std::string uptimeString = uptime.getFormattedUptime();
 
   KernelInfo kernelInfo;
   std::string kernelInfoString = kernelInfo.getKernelVersion();
+
 
   auto paragraph_right = vbox({
       window(text("Server Information"), vbox({
@@ -77,16 +82,17 @@ int main() {
         }),
         hbox({
           color(Color::RedLight, text("CPU: ")),
-          color(Color::Default, text("v5.0.1")),
+          color(Color::Default, text(cpuInfoString)),
+        }),
+        hbox({
+          color(Color::RedLight, text("Uptime: ")),
+          color(Color::Default, text(uptimeString)),
         }),
         hbox({
           color(Color::RedLight, text("Uptime: ")),
           color(Color::Default, text(uptimeString)),
         }),
       })),
-      color(Color::Default, text("Use jmgr for more info")) | hcenter,
-      color(Color::Default, text("Use jmgr for more info")) | hcenter,
-      color(Color::Default, text("Use jmgr for more info")) | hcenter,
       window(text("Server Information"), paragraphAlignLeft(str)),
       window(text("Align center:"), paragraphAlignCenter(str)),
       window(text("Align right:"), paragraphAlignRight(str)),
