@@ -32,6 +32,7 @@
 #include "metrics/uptime.h"
 #include "metrics/kernel_info.h"
 #include "metrics/cpu_info.h"
+#include "metrics/os_info.h"
 
 using namespace ftxui;
 
@@ -69,12 +70,15 @@ int main() {
   KernelInfo kernelInfo;
   std::string kernelInfoString = kernelInfo.getKernelVersion();
 
+  OSInfo osInfo;
+  std::string osInfoString = osInfo.getOSInfo();
+
 
   auto paragraph_right = vbox({
       window(text("Server Information"), vbox({
         hbox({
           color(Color::RedLight, text("OS: ")),
-          color(Color::Default, text("Linux")),
+          color(Color::Default, text(osInfoString)),
         }),
         hbox({
           color(Color::RedLight, text("Kernel: ")),
@@ -88,20 +92,8 @@ int main() {
           color(Color::RedLight, text("Uptime: ")),
           color(Color::Default, text(uptimeString)),
         }),
-        hbox({
-          color(Color::RedLight, text("Uptime: ")),
-          color(Color::Default, text(uptimeString)),
-        }),
-      })),
-      window(text("Server Information"), paragraphAlignLeft(str)),
-      window(text("Align center:"), paragraphAlignCenter(str)),
-      window(text("Align right:"), paragraphAlignRight(str)),
-      window(text("Align justify:"), paragraphAlignJustify(str)),
-      window(text("Side by side"), hbox({
-                                       paragraph(str),
-                                       separator(),
-                                       paragraph(str),
-                                   })),
+      })) | xflex,
+      //window(text("Server Information"), paragraphAlignLeft(str)),
   });
 
   // Show the image on the left side of the screen
@@ -121,10 +113,11 @@ int main() {
   // Render everything
   auto splash_content = Renderer([&] {
     return hbox({
-      imgDisplay | size(WIDTH, EQUAL, screen.dimx() / 3) | size(HEIGHT, EQUAL, screen.dimy()),
+      imgDisplay | size(WIDTH, LESS_THAN, screen.dimx() / 3) 
+        | size(HEIGHT, EQUAL, screen.dimy()),
       separator(),
-      paragraph_right | flex,
-    }) | flex;
+      paragraph_right,
+    });
   });
 
   // Main rendering
@@ -138,7 +131,7 @@ int main() {
     });
   });
 
-  auto programWaitTime = std::chrono::milliseconds(100);
+  auto programWaitTime = std::chrono::milliseconds(10);
   auto maxProgramRunTime = std::chrono::milliseconds(3000);
 
   uptimeString = "1 day, 2 hours, 3 minutes";
