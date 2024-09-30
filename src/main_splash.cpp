@@ -1,39 +1,49 @@
 // Copyright 2020 Arthur Sonzogni. All rights reserved.
 // Use of this source code is governed by the MIT license that can be found in
 // the LICENSE file.
-#include <stddef.h>    // for size_t
-#include <array>       // for array
-#include <atomic>      // for atomic
-#include <chrono>      // for operator""s, chrono_literals
-#include <cmath>       // for sin
-#include <functional>  // for ref, reference_wrapper, function
-#include <memory>      // for allocator, shared_ptr, __shared_ptr_access
-#include <string>  // for string, basic_string, char_traits, operator+, to_string
-#include <thread>   // for sleep_for, thread
-#include <utility>  // for move
-#include <vector>   // for vector
+#include <array>      // for array
+#include <atomic>     // for atomic
+#include <chrono>     // for operator""s, chrono_literals
+#include <cmath>      // for sin
+#include <functional> // for ref, reference_wrapper, function
+#include <memory>     // for allocator, shared_ptr, __shared_ptr_access
+#include <stddef.h>   // for size_t
+#include <string> // for string, basic_string, char_traits, operator+, to_string
+#include <thread> // for sleep_for, thread
+#include <utility> // for move
+#include <vector>  // for vector
+#include <termios.h>
 
-#include "color_info_sorted_2d.ipp"  // for ColorInfoSorted2D
-#include "ftxui/component/component.hpp"  // for Checkbox, Renderer, Horizontal, Vertical, Input, Menu, Radiobox, ResizableSplitLeft, Tab
-#include "ftxui/component/component_base.hpp"  // for ComponentBase, Component
-#include "ftxui/component/component_options.hpp"  // for MenuOption, InputOption
-#include "ftxui/component/event.hpp"              // for Event, Event::Custom
-#include "ftxui/component/screen_interactive.hpp"  // for Component, ScreenInteractive
-#include "ftxui/dom/elements.hpp"  // for text, color, operator|, bgcolor, filler, Element, vbox, size, hbox, separator, flex, window, graph, EQUAL, paragraph, WIDTH, hcenter, Elements, bold, vscroll_indicator, HEIGHT, flexbox, hflow, border, frame, flex_grow, gauge, paragraphAlignCenter, paragraphAlignJustify, paragraphAlignLeft, paragraphAlignRight, dim, spinner, LESS_THAN, center, yframe, GREATER_THAN
-#include "ftxui/dom/flexbox_config.hpp"  // for FlexboxConfig
-#include "ftxui/screen/color.hpp"  // for Color, Color::BlueLight, Color::RedLight, Color::Black, Color::Blue, Color::Cyan, Color::CyanLight, Color::GrayDark, Color::GrayLight, Color::Green, Color::GreenLight, Color::Magenta, Color::MagentaLight, Color::Red, Color::White, Color::Yellow, Color::YellowLight, Color::Default, Color::Palette256, ftxui
-#include "ftxui/screen/color_info.hpp"  // for ColorInfo
-#include "ftxui/screen/terminal.hpp"    // for Size, Dimensions
+#include "color_info_sorted_2d.ipp"      // for ColorInfoSorted2D
+#include "ftxui/component/component.hpp" // for Checkbox, Renderer, Horizontal, Vertical, Input, Menu, Radiobox, ResizableSplitLeft, Tab
+#include "ftxui/component/component_base.hpp"    // for ComponentBase, Component
+#include "ftxui/component/component_options.hpp" // for MenuOption, InputOption
+#include "ftxui/component/event.hpp"             // for Event, Event::Custom
+#include "ftxui/component/screen_interactive.hpp" // for Component, ScreenInteractive
+#include "ftxui/dom/elements.hpp" // for text, color, operator|, bgcolor, filler, Element, vbox, size, hbox, separator, flex, window, graph, EQUAL, paragraph, WIDTH, hcenter, Elements, bold, vscroll_indicator, HEIGHT, flexbox, hflow, border, frame, flex_grow, gauge, paragraphAlignCenter, paragraphAlignJustify, paragraphAlignLeft, paragraphAlignRight, dim, spinner, LESS_THAN, center, yframe, GREATER_THAN
+#include "ftxui/dom/flexbox_config.hpp" // for FlexboxConfig
+#include "ftxui/screen/color.hpp" // for Color, Color::BlueLight, Color::RedLight, Color::Black, Color::Blue, Color::Cyan, Color::CyanLight, Color::GrayDark, Color::GrayLight, Color::Green, Color::GreenLight, Color::Magenta, Color::MagentaLight, Color::Red, Color::White, Color::Yellow, Color::YellowLight, Color::Default, Color::Palette256, ftxui
+#include "ftxui/screen/color_info.hpp" // for ColorInfo
+#include "ftxui/screen/terminal.hpp"   // for Size, Dimensions
 
-#include "tiv/tiv_lib.h"
 #include "tiv/image_view.hpp"
+#include "tiv/tiv_lib.h"
+
+#include "metrics/uptime.h"
+#include "metrics/kernel_info.h"
 
 using namespace ftxui;
 
-int main() {
-  auto screen = ScreenInteractive::Fullscreen();
+void flush_input_buffer() {
+    tcflush(STDIN_FILENO, TCIFLUSH);  // Flush the input buffer
+}
 
- // ---------------------------------------------------------------------------
+int main() {
+  // Primary keeps the content after exiting the splash screen
+  // We prefer this over the alternative
+  auto screen = ScreenInteractive::FitComponent();
+
+  // ---------------------------------------------------------------------------
   // Paragraph
   // ---------------------------------------------------------------------------
   auto make_box = [](size_t dimx, size_t dimy) {
@@ -43,150 +53,124 @@ int main() {
            size(WIDTH, EQUAL, dimx) | size(HEIGHT, EQUAL, dimy);
   };
 
-    std::string str =
-        "Lorem Ipsum is simply dummy text of the printing and typesetting "
-        "industry. Lorem Ipsum has been the industry's standard dummy text "
-        "ever since the 1500s, when an unknown printer took a galley of type "
-        "and scrambled it to make a type specimen book.";
+  std::string str =
+      "Lorem Ipsum is simply dummy text of the printing and typesetting "
+      "industry. Lorem Ipsum has been the industry's standard dummy text "
+      "ever since the 1500s, when an unknown printer took a galley of type "
+      "and scrambled it to make a type specimen book.";
+
+  Uptime uptime;
+  std::string uptimeString = uptime.getFormattedUptime();
+
+  KernelInfo kernelInfo;
+  std::string kernelInfoString = kernelInfo.getKernelVersion();
 
   auto paragraph_right = vbox({
-        window(text("Align left:"), paragraphAlignLeft(str)),
-        window(text("Align center:"), paragraphAlignCenter(str)),
-        window(text("Align right:"), paragraphAlignRight(str)),
-        window(text("Align justify:"), paragraphAlignJustify(str)),
-        window(text("Side by side"), hbox({
-                                        paragraph(str),
-                                        separator(),
-                                        paragraph(str),
-                                    })),
-        window(text("Elements with different size:"),
-                flexbox({
-                    make_box(10, 5),
-                    make_box(9, 4),
-                    make_box(8, 4),
-                    make_box(6, 3),
-                    make_box(10, 5),
-                    make_box(9, 4),
-                    make_box(8, 4),
-                    make_box(6, 3),
-                    make_box(10, 5),
-                    make_box(9, 4),
-                    make_box(8, 4),
-                    make_box(6, 3),
-                })),
-    });
+      window(text("Server Information"), vbox({
+        hbox({
+          color(Color::RedLight, text("OS: ")),
+          color(Color::Default, text("Linux")),
+        }),
+        hbox({
+          color(Color::RedLight, text("Kernel: ")),
+          color(Color::Default, text(kernelInfoString)),
+        }),
+        hbox({
+          color(Color::RedLight, text("CPU: ")),
+          color(Color::Default, text("v5.0.1")),
+        }),
+        hbox({
+          color(Color::RedLight, text("Uptime: ")),
+          color(Color::Default, text(uptimeString)),
+        }),
+      })),
+      color(Color::Default, text("Use jmgr for more info")) | hcenter,
+      color(Color::Default, text("Use jmgr for more info")) | hcenter,
+      color(Color::Default, text("Use jmgr for more info")) | hcenter,
+      window(text("Server Information"), paragraphAlignLeft(str)),
+      window(text("Align center:"), paragraphAlignCenter(str)),
+      window(text("Align right:"), paragraphAlignRight(str)),
+      window(text("Align justify:"), paragraphAlignJustify(str)),
+      window(text("Side by side"), hbox({
+                                       paragraph(str),
+                                       separator(),
+                                       paragraph(str),
+                                   })),
+  });
 
-  // ---------------------------------------------------------------------------
-  // HTOP
-  // ---------------------------------------------------------------------------
-  int shift = 0;
+  // Show the image on the left side of the screen
+  auto cell = [](const std::string &path) { return ftxui::image_view(path); };
+  auto catDisplay = Renderer([&] { return cell("bin/drake_shut.png"); });
+  auto imgDisplay = vbox({
+    cell("bin/espresso.png") | flex,
+    separator(),
+    hbox({
+      color(Color::RedLight, text("drakeor")),
+      color(Color::Default, text("@")),
+      color(Color::RedLight, text("norberta")),
+    }) | hcenter,
+    color(Color::Default, text("Use jmgr for more info")) | hcenter,
+  });
 
-  auto my_graph = [&shift](int width, int height) {
-    std::vector<int> output(width);
-    for (int i = 0; i < width; ++i) {
-      float v = 0.5f;
-      v += 0.1f * sin((i + shift) * 0.1f);
-      v += 0.2f * sin((i + shift + 10) * 0.15f);
-      v += 0.1f * sin((i + shift) * 0.03f);
-      v *= height;
-      output[i] = (int)v;
-    }
-    return output;
-  };
-
-    auto cell = [](const std::string& path){ return ftxui::image_view(path); };
-
-
-    int displayIndex{0};
-    auto catDisplay = Renderer([&]{
-        return cell("bin/drake_shut.png");
-    });
-
-    auto imgDisplay = vbox({
-        cell("bin/drake_shut.png"),
-    });
-
-    auto htop = Renderer([&] {
-        auto frequency = vbox({
-            text("Frequency [Mhz]") | hcenter,
-            hbox({
-                vbox({
-                    text("2400 "),
-                    filler(),
-                    text("1200 "),
-                    filler(),
-                    text("0 "),
-                }),
-                graph(std::ref(my_graph)) | flex,
-            }) | flex,
-        });
-
+  // Render everything
+  auto splash_content = Renderer([&] {
     return hbox({
-               imgDisplay | size(WIDTH, EQUAL, screen.dimx() / 3),
-               separator(),
-               paragraph_right | flex,
-           }) |
-           flex;
+      imgDisplay | size(WIDTH, EQUAL, screen.dimx() / 3) | size(HEIGHT, EQUAL, screen.dimy()),
+      separator(),
+      paragraph_right | flex,
+    }) | flex;
   });
 
-
-
-  // ---------------------------------------------------------------------------
-  // Tabs
-  // ---------------------------------------------------------------------------
-
-  int tab_index = 0;
-  std::vector<std::string> tab_entries = {
-      "htop",
-  };
-  auto tab_selection =
-      Menu(&tab_entries, &tab_index, MenuOption::HorizontalAnimated());
-  auto tab_content = Container::Tab(
-      {
-          htop,
-      },
-      &tab_index);
-
-  auto exit_button =
-      Button("Exit", [&] { screen.Exit(); }, ButtonOption::Animated());
-
-  auto main_container = Container::Vertical({
-      Container::Horizontal({
-          tab_selection,
-          exit_button,
-      }),
-      tab_content,
-  });
+  // Main rendering
+  auto main_container = Container::Vertical({splash_content});
 
   auto main_renderer = Renderer(main_container, [&] {
     return vbox({
-        text("FTXUI Demo") | bold | hcenter,
-        hbox({
-            tab_selection->Render() | flex,
-            exit_button->Render(),
-        }),
-        tab_content->Render() | flex,
+      // Buffer
+        text(" ") | bold | hcenter,
+        splash_content->Render() | flex,
     });
   });
 
-  std::atomic<bool> refresh_ui_continue = true;
-  std::thread refresh_ui([&] {
-    while (refresh_ui_continue) {
-      using namespace std::chrono_literals;
-      std::this_thread::sleep_for(0.05s);
-      // The |shift| variable belong to the main thread. `screen.Post(task)`
-      // will execute the update on the thread where |screen| lives (e.g. the
-      // main thread). Using `screen.Post(task)` is threadsafe.
-      screen.Post([&] { shift++; });
-      // After updating the state, request a new frame to be drawn. This is done
-      // by simulating a new "custom" event to be handled.
-      screen.Post(Event::Custom);
-    }
-  });
+  auto programWaitTime = std::chrono::milliseconds(100);
+  auto maxProgramRunTime = std::chrono::milliseconds(3000);
 
+  uptimeString = "1 day, 2 hours, 3 minutes";
+
+  // Create a separate thread to wait for the UI to start up 
+  // and process the splash screen
+  std::thread([&screen, &programWaitTime]() {
+
+    // The splash screen shows a skeleton of the main screen at first
+    std::this_thread::sleep_for(programWaitTime);
+
+    // Force a UI update after the async tasks in the background finish
+    screen.Post(Event::Custom);
+    //std::this_thread::sleep_for(uiRefreshTime);
+
+    // Wait for the UI update to finish and then exit
+    screen.Post([&screen] {
+        screen.Exit();
+    });
+  }).detach();
+
+  // Thread to forcefully terminate the program after runtime*3 seconds if it hasn't exited
+  std::thread([&maxProgramRunTime]() {
+    std::this_thread::sleep_for(maxProgramRunTime);
+    std::cerr << "Jettison UI seems stuck: forcing termination" << std::endl;
+    std::terminate();  // Forcefully terminate the program
+  }).detach();
+
+  // Main screen loop
   screen.Loop(main_renderer);
-  refresh_ui_continue = false;
-  refresh_ui.join();
+
+  // Clear any pending input
+  // This clears out most of the garbage and prevents garbage 
+  // from appearing in the terminal after
+  auto uiFlushTime = std::chrono::milliseconds(100);
+  std::this_thread::sleep_for(uiFlushTime);
+  flush_input_buffer();  
+
 
   return 0;
 }

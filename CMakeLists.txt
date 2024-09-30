@@ -42,6 +42,9 @@ add_executable(jmgr-splash
   src/main_splash.cpp
   src/tiv/image_view.cpp
   src/tiv/tiv_lib.cpp
+
+  src/metrics/uptime.cpp
+  src/metrics/kernel_info.cpp
 )
 
 target_include_directories(jmgr PRIVATE src)
