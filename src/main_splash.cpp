@@ -33,6 +33,9 @@
 #include "metrics/kernel_info.h"
 #include "metrics/cpu_info.h"
 #include "metrics/os_info.h"
+#include "metrics/memory_info.h"
+#include "metrics/process_info.h"
+#include "metrics/disk_usage.h"
 
 using namespace ftxui;
 
@@ -73,12 +76,40 @@ int main() {
   OSInfo osInfo;
   std::string osInfoString = osInfo.getOSInfo();
 
+  MemoryInfo memoryInfo;
+  memoryInfo.fetchMemoryInfo();
+  std::string totalMemoryString = memoryInfo.getFormattedTotalMemory();
+
+  std::vector<ProcessInfo> processes = ProcessInfo::fetchProcesses();
+  std::string topProcessString = "";
+  if(processes.size() > 0) {
+    topProcessString = processes[0].getProcessName() 
+      + " (" + processes[0].getRSSMemoryUsageFormat() + ")";
+  }
+
+  DiskUsage diskUsage;
+  std::vector<std::string> partitions = diskUsage.getPartitions();
   std::vector<Element> elements;
-  
-  // Dynamically add elements to the vector.
-  elements.push_back(text("Dynamic Column 1"));
-  elements.push_back(text("Dynamic Column 2"));
-  elements.push_back(text("Dynamic Column 3"));
+  int count = 0;
+
+  // Add partitions dynamically up to max
+  const int maxPartitions = 5;
+  for (const auto& partition : partitions) {
+      if (count >= maxPartitions) break;  // Stop after printing 5 partitions
+
+      // Get the partition usage information
+      std::string partitionInfo = diskUsage.printDiskUsage(partition);
+      
+      // Only add as an element if partitionInfo is not blank
+      if (partitionInfo.empty()) continue;
+
+      elements.push_back(hbox({
+          color(Color::RedLight, text(partition + ": ")),
+          color(Color::Default, text(partitionInfo)),
+        }));
+      count++;
+  }
+
 
   auto paragraph_right = vbox({
       window(text("Server Information"), vbox({
@@ -102,23 +133,15 @@ int main() {
       window(text("Memory Information"), vbox({
         hbox({
           color(Color::RedLight, text("Usage: ")),
-          color(Color::Default, text("???")),
+          color(Color::Default, text(totalMemoryString)),
         }),
         hbox({
-          color(Color::RedLight, text("Kernel: ")),
-          color(Color::Default, text(kernelInfoString)),
-        }),
-        hbox({
-          color(Color::RedLight, text("CPU: ")),
-          color(Color::Default, text(cpuInfoString)),
-        }),
-        hbox({
-          color(Color::RedLight, text("Uptime: ")),
-          color(Color::Default, text(uptimeString)),
+          color(Color::RedLight, text("Top Usage: ")),
+          color(Color::Default, text(topProcessString)),
         }),
       })) | xflex,
       window(text("Disk Information"), vbox(std::move(elements))) | xflex,
-      //window(text("Server Information"), paragraphAlignLeft(str)),
+      window(text("Server Info"), paragraphAlignLeft("Welcome! This is where you can insert information about your server.")) | xflex,
   });
 
   // Show the image on the left side of the screen

@@ -47,6 +47,9 @@ add_executable(jmgr-splash
   src/metrics/kernel_info.cpp
   src/metrics/cpu_info.cpp
   src/metrics/os_info.cpp
+  src/metrics/memory_info.cpp
+  src/metrics/process_info.cpp
+  src/metrics/disk_usage.cpp
 )
 
 target_include_directories(jmgr PRIVATE src)
