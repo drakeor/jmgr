@@ -451,6 +451,32 @@ namespace tiv
 
     cimg_library::CImg<unsigned char> load_rgb_CImg(const char *const &filename) {
         cimg_library::CImg<unsigned char> image(filename);
+
+        // Resize the image immediately for performance reasons
+        // Get the original dimensions
+        int original_width = image.width();
+        int original_height = image.height();
+
+        // Maximum allowed size for the largest dimension
+        const int max_size = 256;
+
+        // Calculate the scaling factor to maintain the aspect ratio
+        float scale_factor = 1.0f;
+        if (original_width > original_height) {
+            // Width is the larger dimension
+            scale_factor = static_cast<float>(max_size) / original_width;
+        } else {
+            // Height is the larger dimension
+            scale_factor = static_cast<float>(max_size) / original_height;
+        }
+
+        // Calculate new dimensions while keeping aspect ratio
+        int new_width = static_cast<int>(original_width * scale_factor);
+        int new_height = static_cast<int>(original_height * scale_factor);
+
+        // Resize the image
+        image.resize(new_width, new_height);
+
         if (image.spectrum() == 1) {
             // Greyscale. Just copy greyscale data to all channels
             cimg_library::CImg<unsigned char> rgb_image(

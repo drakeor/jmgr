@@ -180,7 +180,7 @@ int main() {
   });
 
   auto programWaitTime = std::chrono::milliseconds(10);
-  auto maxProgramRunTime = std::chrono::milliseconds(3000);
+  auto maxProgramRunTime = std::chrono::milliseconds(30000);
 
   uptimeString = "1 day, 2 hours, 3 minutes";
 

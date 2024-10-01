@@ -27,6 +27,9 @@ if(NOT ftxui_POPULATED)
 endif()
 
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -g")
+
 # Build the server manager tool
 add_executable(jmgr
   src/main_app.cpp
@@ -59,12 +62,10 @@ target_link_libraries(jmgr
   PRIVATE ftxui::screen
   PRIVATE ftxui::dom
   PRIVATE ftxui::component
-#  grpc++
   zmq
 )
 
 target_link_libraries(jmgr-service
-#  grpc++
   zmq
 )
 
@@ -72,6 +73,5 @@ target_link_libraries(jmgr-splash
   PRIVATE ftxui::screen
   PRIVATE ftxui::dom
   PRIVATE ftxui::component
-#  grpc++
   zmq
 )
