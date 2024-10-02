@@ -12,7 +12,7 @@ We built this server to fulfill the following requirements:
 
 * Plug-in modules to get status of things like QEMU virtual machines
 
-
+* Images loaded are resized to 256x256 for performance reasons. (Soft code this?)
 
 # Roadmap
 
