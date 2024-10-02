@@ -148,7 +148,7 @@ int main() {
   auto cell = [](const std::string &path) { return ftxui::image_view(path); };
   auto catDisplay = Renderer([&] { return cell("bin/drake_shut.png"); });
   auto imgDisplay = vbox({
-    cell("bin/espresso.png") | flex,
+    cell("test.png") | flex,
     separator(),
     hbox({
       color(Color::RedLight, text("drakeor")),
