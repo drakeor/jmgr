@@ -41,3 +41,5 @@ _deps/
 gens/
 http_archives/
 protos/
+
+.DS_Store
