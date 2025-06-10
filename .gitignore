@@ -1,0 +1,25 @@
+# ── Go build cache & modules ───────────────────────────────
+/bin/
+/pkg/
+/*.exe
+/*.test
+coverage.out
+
+# ── Generated protobuf stubs ───────────────────────────────
+api/*.pb.go
+api/*.pb.gw.go
+api/*.pb
+
+# ── IDE / Editor files ─────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*~
+
+# ── OS metadata ────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Logs / misc ────────────────────────────────────────────
+*.log
+*.tmp

@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package monitor;
+
+option go_package = "github.com/drakeor/jmgr/api;api";
+
+// For communating the state of stores and metrics in the cluster
+message BinSummary {
+  string bin_id = 1;
+  uint32 count = 2;
+  bytes bloom_bytes = 3;
+}
+
+message BucketSummary {
+  string bucket = 1;
+  repeated BinSummary bins = 2;
+}
+
+message NodeSummary {
+  repeated BucketSummary summaries = 1;
+}
+
+
+// Extendable metrics model
+message MetricPoint {
+  int64  ts_ms = 1;
+  double value = 2;
+}
+
+message Metric {
+  string node_id = 1;
+  string name    = 2;
+  map<string, string> labels = 3;
+  repeated MetricPoint points = 4;
+  string source   = 5; // Who sent me this metric (not who originated it)
+  string tier     = 6; // "hot" for now
+}
+
+
+// Membership messages
+message PeerInfo {
+  string id          = 1;
+  string addr        = 2;
+  uint64 incarnation = 3;
+  bool   tombstone   = 4;
+}
+
+message MembershipDigest {
+  repeated PeerInfo peers = 1;
+}
+
+// Cluster messages
+message ClusterMsg {
+  oneof payload {
+    Metric           metric = 1;
+    MembershipDigest digest = 2;
+  }
+}
+
+// Join RPC
+message JoinRequest  { string node_id = 1; string addr = 2; }
+message JoinResponse { repeated PeerInfo peers = 1; }
+
+service Cluster {
+  rpc Join   (JoinRequest) returns (JoinResponse);
+  rpc Stream (stream ClusterMsg) returns (stream ClusterMsg);
+
+   // Anti-entropy
+  rpc ListBuckets (Empty) returns (BucketList); // All bucket keys
+  rpc GetMetricPoints (GetMetricRequest) returns (MetricPoints); // All points for a metric
+  rpc GetNodeSummary(Empty) returns (NodeSummary);
+}
+
+message Empty {}
+
+// Each is "nodeID|name|labels"
+message BucketList {
+  repeated string buckets = 1; 
+}
+
+// "nodeID|name|labels"
+message GetMetricRequest {
+  string bucket = 1; 
+}
+
+message MetricPoints {
+  repeated MetricPoint points = 1;
+}
